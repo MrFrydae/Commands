@@ -28,7 +28,7 @@ jobs:
           gradle-version: release-candidate
 
       - name: Compile Core
-        run: ./gradlew :jda-core:build
+        run: ./gradlew :fcs-core:build
 
       - name: Compile JDA Bot
         run: ./gradlew :example-jda:build
