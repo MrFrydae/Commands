@@ -27,9 +27,6 @@ jobs:
         with:
           gradle-version: release-candidate
 
-      - name: Start Gradle Wrapper
-        run: ./gradlew
-
       - name: Compile Core
         run: ./gradlew :fcs-core:build
 
