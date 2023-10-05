@@ -28,16 +28,16 @@ jobs:
           gradle-version: release-candidate
 
       - name: Compile Core
-        run: ./gradlew :fcs-core:build
+        run: ./gradlew :fcs-core:build --scan
 
       - name: Compile JDA
-        run: ./gradlew :fcs-jda:build
+        run: ./gradlew :fcs-jda:build --scan
 
       - name: Compile Fabric
-        run: ./gradlew :fcs-fabric:build
+        run: ./gradlew :fcs-fabric:build --scan
 
       - name: Compile JDA Bot
-        run: ./gradlew :example-jda:build
+        run: ./gradlew :example-jda:build --scan
 
       - name: Run tests
-        run: ./gradlew test
+        run: ./gradlew test --scan
