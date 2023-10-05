@@ -27,8 +27,17 @@ jobs:
         with:
           gradle-version: release-candidate
 
+      - name: Start Gradle Wrapper
+        run: ./gradlew
+
       - name: Compile Core
         run: ./gradlew :fcs-core:build
+
+      - name: Compile JDA
+        run: ./gradlew :fcs-jda:build
+
+      - name: Compile Fabric
+        run: ./gradlew :fcs-fabric:build
 
       - name: Compile JDA Bot
         run: ./gradlew :example-jda:build
