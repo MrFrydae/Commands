@@ -35,11 +35,13 @@ public final class JDARegisteredCommand extends RegisteredCommand {
      * @return a {@link JDACommandParameter} if found, null otherwise
      */
     public JDACommandParameter getParameter(String name) {
-        return getParameters().stream()
-                .map(JDACommandParameter::new)
-                .filter(p -> p.getName() != null)
-                .filter(p -> p.getName().equalsIgnoreCase(name))
-                .findFirst().orElse(null);
+        CommandParameter parameter = super.getParameter(name);
+
+        if (parameter != null) {
+            return new JDACommandParameter(parameter);
+        }
+
+        return null;
     }
 
     public boolean hasPermissions() {

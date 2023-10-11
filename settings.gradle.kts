@@ -30,7 +30,7 @@ gradleEnterprise {
 
 rootProject.name = "Commands"
 
-include ("example-jda", "fcs-jda", "fcs-core", "fcs-fabric")
+include ("example-jda", "example-fabric", "fcs-jda", "fcs-core", "fcs-fabric")
 
 project(":fcs-core").name = "fcs-core"
 project(":fcs-jda").name = "fcs-jda"

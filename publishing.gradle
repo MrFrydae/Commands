@@ -3,8 +3,8 @@ apply plugin: 'maven-publish'
 publishing {
     repositories {
         maven {
-            name = "frydaeRepository"
-            url = "https://maven.frydae.dev/releases"
+            name = "frydaeNexus"
+            url = "https://nexus.frydae.dev/repository/maven-snapshots/"
             credentials(PasswordCredentials)
             authentication {
                 basic(BasicAuthentication)
@@ -13,18 +13,10 @@ publishing {
     }
 
     publications {
-        base(MavenPublication) {
+        basic(MavenPublication) {
             groupId = project.group
             artifactId = project.name
             version = project.version
-
-            from components.java
-        }
-
-        latest(MavenPublication) {
-            groupId = project.group
-            artifactId = project.name
-            version = "LATEST"
 
             from components.java
         }

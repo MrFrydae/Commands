@@ -41,4 +41,17 @@ public class RegisteredCommand {
     public boolean hasSubcommands() {
         return !subcommands.isEmpty();
     }
+
+    /**
+     * Finds a {@link CommandParameter} by name.
+     *
+     * @param name the name of the parameter
+     * @return a {@link CommandParameter} if found, null otherwise
+     */
+    public CommandParameter getParameter(String name) {
+        return getParameters().stream()
+                .filter(p -> p.getName() != null)
+                .filter(p -> p.getName().equalsIgnoreCase(name))
+                .findFirst().orElse(null);
+    }
 }
