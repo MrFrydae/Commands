@@ -11,7 +11,7 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${property("fabric_loader_version")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
 
-    implementation(project(":fcs-fabric"))
+    api(project(":fcs-fabric", configuration = "namedElements"))
 }
 
 tasks {
