@@ -18,7 +18,7 @@ import java.util.List;
 
 public final class JDACommandManager extends CommandManager {
     private static JDACommandManager singleton;
-    @Getter private final JDACommandContexts<JDACommandExecutionContext> commandContexts;
+    @Getter private final JDACommandContexts commandContexts;
     @Getter private final JDACommandCompletions commandCompletions;
     @Getter private final JDACommandConditions commandConditions;
     private static JDA jda;
@@ -27,7 +27,7 @@ public final class JDACommandManager extends CommandManager {
      * Creates a new command manager.
      */
     private JDACommandManager() {
-        this.commandContexts = new JDACommandContexts<>();
+        this.commandContexts = new JDACommandContexts();
         this.commandCompletions = new JDACommandCompletions();
         this.commandConditions = new JDACommandConditions();
     }
@@ -111,7 +111,7 @@ public final class JDACommandManager extends CommandManager {
 
     @NotNull
     private static OptionData getOptionData(JDACommandParameter parameter) {
-        JDACommandContexts<JDACommandExecutionContext> commandContexts = JDACommandManager.getSingleton().getCommandContexts();
+        JDACommandContexts commandContexts = JDACommandManager.getSingleton().getCommandContexts();
         JDACommandCompletions commandCompletions = JDACommandManager.getSingleton().getCommandCompletions();
 
         OptionData optionData = new OptionData(commandContexts.getMapping(parameter.getParameter().getType()), parameter.getName(), parameter.getDescription(), !parameter.isOptional());

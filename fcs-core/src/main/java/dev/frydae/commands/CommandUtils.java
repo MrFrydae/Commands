@@ -1,9 +1,13 @@
 package dev.frydae.commands;
 
+import com.google.common.collect.Lists;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public final class CommandUtils {
@@ -51,5 +55,20 @@ public final class CommandUtils {
         arr = Arrays.copyOf(arr, N + 1);
         arr[N] = element;
         return arr;
+    }
+
+    public static boolean isTruthy(String input) {
+        return switch (input.toLowerCase()) {
+            case "yes", "y", "true", "t", "on" -> true;
+            default -> false;
+        };
+    }
+
+    public static <T> List<T> reverseList(List<T> list) {
+        List<T> copy = Lists.newArrayList();
+        copy.addAll(list);
+        Collections.reverse(copy);
+
+        return copy;
     }
 }

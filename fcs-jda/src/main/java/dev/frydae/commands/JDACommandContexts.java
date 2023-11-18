@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 
 import java.util.Map;
 
-public final class JDACommandContexts<R extends JDACommandExecutionContext> extends CommandContexts<JDACommandExecutionContext> {
+public final class JDACommandContexts extends CommandContexts<JDACommandExecutionContext> {
     private final Map<Class<?>, OptionType> typeMap;
 
     /**

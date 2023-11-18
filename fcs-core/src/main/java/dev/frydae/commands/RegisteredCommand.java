@@ -18,7 +18,7 @@ public class RegisteredCommand {
     @NotNull private final String name;
     @NotNull private final String description;
     private final List<CommandParameter> parameters;
-    private final List<RegisteredCommand> subcommands = Lists.newArrayList();
+    private final List<RegisteredCommand> subcommands = Lists.newCopyOnWriteArrayList();
 
     /**
      * Prepends the parent's name if one exists.
