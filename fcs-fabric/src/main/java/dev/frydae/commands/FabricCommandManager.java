@@ -54,9 +54,9 @@ public final class FabricCommandManager extends CommandManager {
 
         if (permsModFound) {
             return PermissionStore.hasPermission(Objects.requireNonNull(source.getPlayer()), permissions);
+        } else {
+            return source.hasPermissionLevel(1);
         }
-
-        return false;
     }
 
     public static void upsertCommands() {
