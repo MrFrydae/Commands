@@ -1,6 +1,7 @@
 package dev.frydae.commands;
 
 import dev.frydae.commands.annotations.CommandPermission;
+import dev.frydae.commands.annotations.Default;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -14,8 +15,6 @@ public class FabricCommandRegistration extends CommandRegistration {
                 .map(cmd -> {
                     Method method = cmd.getMethod();
 
-                    boolean permsExist = method.isAnnotationPresent(CommandPermission.class);
-
                     return new FabricRegisteredCommand(
                             cmd.getInstance(),
                             cmd.getParent(),
@@ -24,7 +23,7 @@ public class FabricCommandRegistration extends CommandRegistration {
                             cmd.getName(),
                             cmd.getDescription(),
                             cmd.getParameters(),
-                            permsExist
+                            CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null)
                     );
                 })
                 .forEach(command -> FabricCommandManager.getRootCommands().add(command));
@@ -36,12 +35,12 @@ public class FabricCommandRegistration extends CommandRegistration {
         RegisteredCommand parentCommand = collectSubcommands(baseCommand);
 
         if (parentCommand != null) {
-            boolean permsExist = cmdClass.isAnnotationPresent(CommandPermission.class);
+            String[] cmdPerms = CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null);
 
-            FabricRegisteredCommand parent = new FabricRegisteredCommand(parentCommand.getInstance(), parentCommand.getParent(), parentCommand.getBaseClass(), parentCommand.getMethod(), parentCommand.getName(), parentCommand.getDescription(), parentCommand.getParameters(), permsExist);
+            FabricRegisteredCommand parent = new FabricRegisteredCommand(parentCommand.getInstance(), parentCommand.getParent(), parentCommand.getBaseClass(), parentCommand.getMethod(), parentCommand.getName(), parentCommand.getDescription(), parentCommand.getParameters(), cmdPerms);
 
             for (RegisteredCommand subcommand : parentCommand.getSubcommands()) {
-                boolean subPermsExist = subcommand.getMethod().isAnnotationPresent(CommandPermission.class);
+                String[] subPerms = CommandManager.getAnnotations().getAnnotationValue(subcommand.getMethod(), CommandPermission.class, null);
 
                 List<CommandParameter> subParams = collectMethodParameters(subcommand.getMethod());
 
@@ -55,7 +54,7 @@ public class FabricCommandRegistration extends CommandRegistration {
                     }
                 }
 
-                parent.addSubcommand(new FabricRegisteredCommand(parent.getInstance(), parent, parent.getBaseClass(), subcommand.getMethod(), subcommand.getName(), subcommand.getDescription(), subParams, subPermsExist));
+                parent.addSubcommand(new FabricRegisteredCommand(parent.getInstance(), parent, parent.getBaseClass(), subcommand.getMethod(), subcommand.getName(), subcommand.getDescription(), subParams, subPerms));
             }
 
             FabricCommandManager.getRootCommands().add(parent);

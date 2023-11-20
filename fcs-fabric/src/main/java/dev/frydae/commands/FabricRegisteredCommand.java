@@ -1,23 +1,30 @@
 package dev.frydae.commands;
 
 import lombok.Getter;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class FabricRegisteredCommand extends RegisteredCommand {
-    @Getter private final boolean permsExist;
+    private final String[] permissions;
 
-    public FabricRegisteredCommand(@NotNull BaseCommand instance, RegisteredCommand parent, @NotNull Class<?> baseClass, Method method, @NotNull String name, @NotNull String description, List<CommandParameter> parameters, boolean permsExist) {
+    public FabricRegisteredCommand(@NotNull BaseCommand instance, RegisteredCommand parent, @NotNull Class<?> baseClass, Method method, @NotNull String name, @NotNull String description, List<CommandParameter> parameters, String[] permissions) {
         super(instance, parent, baseClass, method, name, description, parameters.stream().map(FabricCommandParameter::new).collect(Collectors.toList()));
 
-        this.permsExist = permsExist;
+        this.permissions = permissions;
+
     }
 
     public @NotNull FabricBaseCommand getInstance() {
         return (FabricBaseCommand) super.getInstance();
+    }
+
+    public FabricRegisteredCommand getParent() {
+        return (FabricRegisteredCommand) super.getParent();
     }
 
     /**
@@ -37,6 +44,14 @@ public class FabricRegisteredCommand extends RegisteredCommand {
     }
 
     public boolean hasPermissions() {
-        return permsExist;
+        return permissions != null && permissions.length > 0;
+    }
+
+    public String[] getPermissions() {
+        if (getParent() != null) {
+            return Arrays.stream(ArrayUtils.addAll(getParent().getPermissions(), permissions)).distinct().toArray(String[]::new);
+        }
+
+        return permissions;
     }
 }

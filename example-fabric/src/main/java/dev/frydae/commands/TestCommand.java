@@ -1,6 +1,8 @@
 package dev.frydae.commands;
 
 import dev.frydae.commands.annotations.*;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.text.Text;
 
 @CommandAlias("test")
@@ -10,7 +12,10 @@ public class TestCommand extends FabricBaseCommand {
     @Subcommand("pickle")
     @Description("pickles")
     public void onPickle() {
-        System.out.println("fish");
+        int i = 1;
+        for (ModContainer allMod : FabricLoader.getInstance().getAllMods()) {
+            reply(Text.literal(i++ + ": ").append(allMod.getMetadata().getId()));
+        }
     }
 
     @Subcommand("banana")
@@ -30,13 +35,5 @@ public class TestCommand extends FabricBaseCommand {
     @Description("range")
     public void onRange(@Name("num") @Description("num") @Condition("limits|min=1,max=10") Integer num) {
         reply(Text.literal(num.toString()));
-    }
-
-    @CommandAlias("perms")
-    @Subcommand("perms")
-    @Description("perms")
-    @CommandPermission
-    public void onPerms() {
-        reply(Text.literal("You have permission for this... yay"));
     }
 }

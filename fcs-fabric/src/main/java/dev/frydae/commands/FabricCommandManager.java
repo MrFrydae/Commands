@@ -2,19 +2,16 @@ package dev.frydae.commands;
 
 import com.google.common.collect.Lists;
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import dev.frydae.accessmanager.PermissionStore;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -23,12 +20,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 
-public class FabricCommandManager extends CommandManager {
+public final class FabricCommandManager extends CommandManager {
     private static FabricCommandManager singleton;
     @Getter private final FabricCommandContexts commandContexts;
     @Getter private final FabricCommandCompletions commandCompletions;
@@ -53,22 +49,18 @@ public class FabricCommandManager extends CommandManager {
         FabricCommandRegistration.registerSubcommands(baseCommand);
     }
 
-    public static int giveDiamond(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
-        final ServerCommandSource source = ctx.getSource();
+    private static boolean checkPermissions(ServerCommandSource source, String[] permissions) {
+        boolean permsModFound = FabricLoader.getInstance().getAllMods().stream().anyMatch(m -> m.getMetadata().getId().equalsIgnoreCase("access-manager"));
 
-        final PlayerEntity self = source.getPlayer(); // If not a player than the command ends
-
-        if(!self.getInventory().insertStack(new ItemStack(Items.DIAMOND))){
-            throw new SimpleCommandExceptionType(Text.translatable("inventory.isfull")).create();
+        if (permsModFound) {
+            return PermissionStore.hasPermission(Objects.requireNonNull(source.getPlayer()), permissions);
         }
 
-        return 1;
+        return false;
     }
 
     public static void upsertCommands() {
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
-            dispatcher.register(literal("giveMeDiamond").executes(ctx -> giveDiamond(ctx)));
-
             for (RegisteredCommand cmd : getRootCommands()) {
                 FabricRegisteredCommand command = (FabricRegisteredCommand) cmd;
 
@@ -81,7 +73,7 @@ public class FabricCommandManager extends CommandManager {
                         LiteralArgumentBuilder<ServerCommandSource> subBuilder = getServerCommandSourceLiteralArgumentBuilder(subcommand, c -> executeCommand(subcommand, c));
 
                         if (subcommand.hasPermissions()) {
-                            subBuilder = subBuilder.requires(p -> p.hasPermissionLevel(1));
+                            subBuilder = subBuilder.requires(p -> checkPermissions(p, subcommand.getPermissions()));
                         }
 
                         builder = builder.then(subBuilder);
@@ -90,7 +82,7 @@ public class FabricCommandManager extends CommandManager {
                     builder = getServerCommandSourceLiteralArgumentBuilder(command, c -> executeCommand(command, c));
 
                     if (command.hasPermissions()) {
-                        builder = builder.requires(p -> p.hasPermissionLevel(1));
+                        builder = builder.requires(p -> checkPermissions(p, command.getPermissions()));
                     }
                 }
 
