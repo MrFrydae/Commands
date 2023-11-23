@@ -5,7 +5,7 @@ plugins {
 group = property("maven_group")!!
 version = "${property("fabric_version")!!}-SNAPSHOT"
 
-apply (from = "$rootDir/publishing.gradle")
+apply(from = uri("https://files.frydae.dev/gradle/publishing.gradle"))
 
 dependencies {
     minecraft("com.mojang:minecraft:${property("minecraft_version")}")
@@ -13,7 +13,7 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${property("fabric_loader_version")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
 
-    modImplementation("dev.frydae:accessmanager:${version}") {
+    modImplementation("dev.frydae:accessmanager:${property("access_manager_version")!!}-SNAPSHOT") {
         exclude(group = "dev.frydae", module = "fcs-fabric")
     }
 

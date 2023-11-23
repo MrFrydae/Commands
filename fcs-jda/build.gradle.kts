@@ -1,12 +1,7 @@
-plugins {
-    java
-    id("io.freefair.lombok") version "8.3"
-}
-
 group = "dev.frydae"
 version = "${property("jda_version")}-SNAPSHOT"
 
-apply(from = "$rootDir/publishing.gradle")
+apply(from = uri("https://files.frydae.dev/gradle/publishing.gradle"))
 
 dependencies {
     implementation("net.dv8tion:JDA:${property("jda_version")}") {

@@ -11,7 +11,6 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -64,31 +63,91 @@ public final class FabricCommandManager extends CommandManager {
             for (RegisteredCommand cmd : getRootCommands()) {
                 FabricRegisteredCommand command = (FabricRegisteredCommand) cmd;
 
-                LiteralArgumentBuilder<ServerCommandSource> builder = literal(command.getName());
+                for (String alias : command.getAliases()) {
+                    LiteralArgumentBuilder<ServerCommandSource> builder = literal(alias);
 
-                if (command.hasSubcommands()) {
-                    for (RegisteredCommand scmd : command.getSubcommands()) {
-                        FabricRegisteredCommand subcommand = (FabricRegisteredCommand) scmd;
-
-                        LiteralArgumentBuilder<ServerCommandSource> subBuilder = getServerCommandSourceLiteralArgumentBuilder(subcommand, c -> executeCommand(subcommand, c));
-
-                        if (subcommand.hasPermissions()) {
-                            subBuilder = subBuilder.requires(p -> checkPermissions(p, subcommand.getPermissions()));
+                    if (command.hasSubcommands()) {
+                        if (command.getMethod() != null) {
+                            builder.executes(c -> executeCommand(command, c));
                         }
 
-                        builder = builder.then(subBuilder);
-                    }
-                } else {
-                    builder = getServerCommandSourceLiteralArgumentBuilder(command, c -> executeCommand(command, c));
+                        builder = setupSubcommands(command, builder);
+                    } else {
+                        builder = collectCommandArguments(alias, command, c -> executeCommand(command, c));
 
-                    if (command.hasPermissions()) {
-                        builder = builder.requires(p -> checkPermissions(p, command.getPermissions()));
+                        if (command.hasPermissions()) {
+                            builder = builder.requires(p -> checkPermissions(p, command.getPermissions()));
+                        }
                     }
+
+                    dispatcher.register(builder);
                 }
-
-                dispatcher.register(builder);
             }
         }));
+    }
+
+    private static LiteralArgumentBuilder<ServerCommandSource> setupSubcommands(FabricRegisteredCommand command, LiteralArgumentBuilder<ServerCommandSource> builder) {
+        for (RegisteredCommand scmd : command.getSubcommands()) {
+            FabricRegisteredCommand subcommand = (FabricRegisteredCommand) scmd;
+
+            for (String alias : subcommand.getAliases()) {
+                LiteralArgumentBuilder<ServerCommandSource> subBuilder = collectCommandArguments(alias, subcommand, c -> executeCommand(subcommand, c));
+
+                if (subcommand.hasPermissions()) {
+                    subBuilder = subBuilder.requires(p -> checkPermissions(p, subcommand.getPermissions()));
+                }
+
+                builder = builder.then(subBuilder);
+            }
+        }
+
+        return builder;
+    }
+
+    private static LiteralArgumentBuilder<ServerCommandSource> collectCommandArguments(String alias, FabricRegisteredCommand command, Command<ServerCommandSource> executor) {
+        LiteralArgumentBuilder<ServerCommandSource> subBuilder = literal(alias);
+
+        RequiredArgumentBuilder<ServerCommandSource, String> argumentBuilder = null;
+
+        for (CommandParameter param : CommandUtils.reverseList(command.getParameters())) {
+            FabricCommandParameter commandParameter = (FabricCommandParameter) param;
+
+            RequiredArgumentBuilder<ServerCommandSource, String> argument = argument(commandParameter.getName(), StringArgumentType.word());
+
+            argument = setupParameterCompletions(commandParameter, argument);
+
+            if (argumentBuilder == null) {
+                argumentBuilder = argument.executes(executor);
+            } else {
+                argumentBuilder = argument.then(argumentBuilder);
+            }
+        }
+
+        if (argumentBuilder == null) {
+            return subBuilder.executes(executor);
+        } else {
+            return subBuilder.then(argumentBuilder);
+        }
+    }
+
+    private static RequiredArgumentBuilder<ServerCommandSource, String> setupParameterCompletions(FabricCommandParameter commandParameter, RequiredArgumentBuilder<ServerCommandSource, String> argument) {
+        FabricCommandCompletions commandCompletions = FabricCommandManager.getSingleton().getCommandCompletions();
+
+        if (commandParameter.hasCompletion()) {
+            argument = argument.suggests((context, builder) -> {
+                Objects.requireNonNull(commandCompletions.getCompletions(commandParameter.getCompletion())).forEach(builder::suggest);
+
+                return builder.buildFuture();
+            });
+        } else if (commandParameter.hasValues()) {
+            argument = argument.suggests((context, builder) -> {
+                Objects.requireNonNull(Arrays.stream(commandParameter.getValues().split("\\|"))).forEach(builder::suggest);
+
+                return builder.buildFuture();
+            });
+        }
+
+        return argument;
     }
 
     @SneakyThrows({IllegalAccessException.class, InvocationTargetException.class})
@@ -137,46 +196,6 @@ public final class FabricCommandManager extends CommandManager {
             }
 
             return resolve;
-        }
-    }
-
-    private static LiteralArgumentBuilder<ServerCommandSource> getServerCommandSourceLiteralArgumentBuilder(FabricRegisteredCommand command, Command<ServerCommandSource> executor) {
-        FabricCommandCompletions commandCompletions = FabricCommandManager.getSingleton().getCommandCompletions();
-
-        LiteralArgumentBuilder<ServerCommandSource> subBuilder = literal(command.getName());
-
-        RequiredArgumentBuilder<ServerCommandSource, String> argumentBuilder = null;
-
-        for (CommandParameter param : CommandUtils.reverseList(command.getParameters())) {
-            FabricCommandParameter commandParameter = (FabricCommandParameter) param;
-
-            RequiredArgumentBuilder<ServerCommandSource, String> argument = argument(commandParameter.getName(), StringArgumentType.word());
-
-            if (commandParameter.hasCompletion()) {
-                argument = argument.suggests(((context, builder) -> {
-                    Objects.requireNonNull(commandCompletions.getCompletions(commandParameter.getCompletion())).forEach(builder::suggest);
-
-                    return builder.buildFuture();
-                }));
-            } else if (commandParameter.hasValues()) {
-                argument = argument.suggests(((context, builder) -> {
-                    Objects.requireNonNull(Arrays.stream(commandParameter.getValues().split("\\|"))).forEach(builder::suggest);
-
-                    return builder.buildFuture();
-                }));
-            }
-
-            if (argumentBuilder == null) {
-                argumentBuilder = argument.executes(executor);
-            } else {
-                argumentBuilder = argument.then(argumentBuilder);
-            }
-        }
-
-        if (argumentBuilder == null) {
-            return subBuilder.executes(executor);
-        } else {
-            return subBuilder.then(argumentBuilder);
         }
     }
 }

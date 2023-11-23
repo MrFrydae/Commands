@@ -7,6 +7,7 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 
 @Data
@@ -16,9 +17,13 @@ public class RegisteredCommand {
     @NotNull private final Class<?> baseClass;
     private final Method method;
     @NotNull private final String name;
-    @NotNull private final String description;
+    private final String description;
     private final List<CommandParameter> parameters;
     private final List<RegisteredCommand> subcommands = Lists.newCopyOnWriteArrayList();
+
+    public List<String> getAliases() {
+        return Arrays.asList(name.split("\\|"));
+    }
 
     /**
      * Prepends the parent's name if one exists.

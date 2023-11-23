@@ -35,7 +35,14 @@ public class CommandRegistration {
             String alias = CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandAlias.class);
             String description = CommandManager.getAnnotations().getAnnotationValue(cmdClass, Description.class);
 
-            RegisteredCommand parent = new RegisteredCommand(baseCommand, null, cmdClass, null, alias, description, Lists.newArrayList());
+            Method parentMethod = null;
+
+            java.util.Optional<Method> first = Arrays.stream(cmdClass.getMethods()).filter(method -> method.isAnnotationPresent(Default.class)).findFirst();
+            if (first.isPresent()) {
+                parentMethod = first.get();
+            }
+
+            RegisteredCommand parent = new RegisteredCommand(baseCommand, null, cmdClass, parentMethod, alias.split("\\|")[0], description, Lists.newArrayList());
 
             Arrays.stream(cmdClass.getMethods())
                     .filter(method -> method.isAnnotationPresent(Subcommand.class))
@@ -70,7 +77,7 @@ public class CommandRegistration {
 
             CommandParameter commandParameter = new CommandParameter(
                     parameter,
-                    CommandManager.getAnnotations().getAnnotationValue(parameter, Name.class),
+                    CommandManager.getAnnotations().getAnnotationValue(parameter, Name.class, parameter.getName()),
                     CommandManager.getAnnotations().getAnnotationValue(parameter, Description.class),
                     optional,
                     CommandManager.getAnnotations().getAnnotationValue(parameter, Default.class, null),
