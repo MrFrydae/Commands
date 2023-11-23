@@ -8,7 +8,7 @@ import net.minecraft.util.Formatting;
 
 public class MiscCommands extends FabricBaseCommand {
 
-    @CommandAlias("fish")
+    @CommandAlias("fish|f")
     @Description("pickles")
     public void onFish(@Name("fish") @Description("fish") String fish) {
         getContext().getSource().sendMessage(Text.literal(fish).formatted(Formatting.AQUA).formatted(Formatting.BOLD));

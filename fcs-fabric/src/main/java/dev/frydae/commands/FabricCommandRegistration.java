@@ -11,22 +11,24 @@ public class FabricCommandRegistration extends CommandRegistration {
         Class<? extends FabricBaseCommand> cmdClass = baseCommand.getClass();
 
         collectCommandAliases(baseCommand)
-                .stream()
-                .map(cmd -> {
-                    Method method = cmd.getMethod();
+                .forEach(cmd -> {
+                    for (String alias : cmd.getAliases()) {
+                        FabricRegisteredCommand command = new FabricRegisteredCommand(
+                                cmd.getInstance(),
+                                cmd.getParent(),
+                                cmd.getBaseClass(),
+                                cmd.getMethod(),
+                                alias,
+                                cmd.getDescription(),
+                                cmd.getParameters(),
+                                CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null)
+                        );
 
-                    return new FabricRegisteredCommand(
-                            cmd.getInstance(),
-                            cmd.getParent(),
-                            cmd.getBaseClass(),
-                            cmd.getMethod(),
-                            cmd.getName(),
-                            cmd.getDescription(),
-                            cmd.getParameters(),
-                            CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null)
-                    );
-                })
-                .forEach(command -> FabricCommandManager.getRootCommands().add(command));
+                        verifyParameterCompletions(FabricCommandManager.getSingleton().getCommandCompletions(), command, command.getParameters());
+
+                        FabricCommandManager.getRootCommands().add(command);
+                    }
+                });
     }
 
     static void registerSubcommands(FabricBaseCommand baseCommand) {
@@ -37,27 +39,23 @@ public class FabricCommandRegistration extends CommandRegistration {
         if (parentCommand != null) {
             String[] cmdPerms = CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null);
 
-            FabricRegisteredCommand parent = new FabricRegisteredCommand(parentCommand.getInstance(), parentCommand.getParent(), parentCommand.getBaseClass(), parentCommand.getMethod(), parentCommand.getName(), parentCommand.getDescription(), parentCommand.getParameters(), cmdPerms);
+            for (String alias : parentCommand.getAliases()) {
+                FabricRegisteredCommand parent = new FabricRegisteredCommand(parentCommand.getInstance(), parentCommand.getParent(), parentCommand.getBaseClass(), parentCommand.getMethod(), alias, parentCommand.getDescription(), parentCommand.getParameters(), cmdPerms);
 
-            for (RegisteredCommand subcommand : parentCommand.getSubcommands()) {
-                String[] subPerms = CommandManager.getAnnotations().getAnnotationValue(subcommand.getMethod(), CommandPermission.class, null);
+                for (RegisteredCommand subcommand : parentCommand.getSubcommands()) {
+                    String[] subPerms = CommandManager.getAnnotations().getAnnotationValue(subcommand.getMethod(), CommandPermission.class, null);
 
-                List<CommandParameter> subParams = collectMethodParameters(subcommand.getMethod());
+                    List<CommandParameter> subParams = collectMethodParameters(subcommand.getMethod());
 
-                for (CommandParameter subParam : subParams) {
-                    if (subParam.hasCompletion()) {
-                        if (FabricCommandManager.getSingleton().getCommandCompletions().getCompletions(subParam.getCompletion()) == null) {
-                            System.err.printf("Parameter [%s] registered in command [%s] requested missing completion [%s]\n", subParam.getName(), subcommand.getFullName(), subParam.getCompletion());
+                    verifyParameterCompletions(FabricCommandManager.getSingleton().getCommandCompletions(), subcommand, subParams);
 
-                            System.exit(1);
-                        }
+                    for (String subcommandAlias : subcommand.getAliases()) {
+                        parent.addSubcommand(new FabricRegisteredCommand(parent.getInstance(), parent, parent.getBaseClass(), subcommand.getMethod(), subcommandAlias, subcommand.getDescription(), subParams, subPerms));
                     }
                 }
 
-                parent.addSubcommand(new FabricRegisteredCommand(parent.getInstance(), parent, parent.getBaseClass(), subcommand.getMethod(), subcommand.getName(), subcommand.getDescription(), subParams, subPerms));
+                FabricCommandManager.getRootCommands().add(parent);
             }
-
-            FabricCommandManager.getRootCommands().add(parent);
         }
     }
 }

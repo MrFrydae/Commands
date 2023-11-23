@@ -6,11 +6,11 @@ import dev.frydae.commands.annotations.Description;
 import dev.frydae.commands.annotations.Subcommand;
 import net.minecraft.text.Text;
 
-@CommandAlias("perms")
+@CommandAlias("perms|p")
 @Description("perms")
 public class PermsCommand extends FabricBaseCommand {
 
-    @Subcommand("simple")
+    @Subcommand("simple|s")
     @Description("simple")
     @CommandPermission
     public void onSimplePerms() {

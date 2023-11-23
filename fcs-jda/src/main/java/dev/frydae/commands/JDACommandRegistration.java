@@ -33,8 +33,7 @@ public final class JDACommandRegistration extends CommandRegistration {
         Permission[] classPerms = JDACommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, new Permission[]{});
 
         collectCommandAliases(baseCommand)
-                .stream()
-                .map(cmd -> {
+                .forEach(cmd -> {
                     Method method = cmd.getMethod();
 
                     Permission[] methodPerms = JDACommandManager.getAnnotations().getAnnotationValue(method, CommandPermission.class, new Permission[]{});
@@ -42,19 +41,24 @@ public final class JDACommandRegistration extends CommandRegistration {
 
                     boolean global = method.isAnnotationPresent(GlobalCommand.class);
 
-                    return new JDARegisteredCommand(
-                            cmd.getInstance(),
-                            cmd.getParent(),
-                            cmd.getBaseClass(),
-                            cmd.getMethod(),
-                            cmd.getName(),
-                            cmd.getDescription(),
-                            cmd.getParameters(),
-                            global,
-                            mergedPerms
-                    );
-                })
-                .forEach(command -> JDACommandManager.getRootCommands().add(command));
+                    for (String alias : cmd.getAliases()) {
+                        JDARegisteredCommand command = new JDARegisteredCommand(
+                                cmd.getInstance(),
+                                cmd.getParent(),
+                                cmd.getBaseClass(),
+                                cmd.getMethod(),
+                                alias,
+                                cmd.getDescription(),
+                                cmd.getParameters(),
+                                global,
+                                mergedPerms
+                        );
+
+                        verifyParameterCompletions(JDACommandManager.getSingleton().getCommandCompletions(), command, command.getParameters());
+
+                        JDACommandManager.getRootCommands().add(command);
+                    }
+                });
     }
 
     /**
@@ -71,17 +75,21 @@ public final class JDACommandRegistration extends CommandRegistration {
             boolean global = cmdClass.isAnnotationPresent(GlobalCommand.class);
             Permission[] permissions = JDACommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null);
 
-            JDARegisteredCommand parent = new JDARegisteredCommand(parentCommand.getInstance(), parentCommand.getParent(), parentCommand.getBaseClass(), parentCommand.getMethod(), parentCommand.getName(), parentCommand.getDescription(), parentCommand.getParameters(), global, permissions);
+            for (String alias : parentCommand.getAliases()) {
+                JDARegisteredCommand parent = new JDARegisteredCommand(parentCommand.getInstance(), parentCommand.getParent(), parentCommand.getBaseClass(), parentCommand.getMethod(), alias, parentCommand.getDescription(), parentCommand.getParameters(), global, permissions);
 
-            for (RegisteredCommand subcommand : parentCommand.getSubcommands()) {
-                Permission[] subPerms = JDACommandManager.getAnnotations().getAnnotationValue(subcommand.getMethod(), CommandPermission.class, null);
+                for (RegisteredCommand subcommand : parentCommand.getSubcommands()) {
+                    Permission[] subPerms = JDACommandManager.getAnnotations().getAnnotationValue(subcommand.getMethod(), CommandPermission.class, null);
 
-                List<CommandParameter> subParams = collectMethodParameters(subcommand.getMethod());
+                    List<CommandParameter> subParams = collectMethodParameters(subcommand.getMethod());
 
-                parent.addSubcommand(new JDARegisteredCommand(parent.getInstance(), parent, parent.getBaseClass(), subcommand.getMethod(), subcommand.getName(), subcommand.getDescription(), subParams, global, subPerms));
+                    for (String subcommandAlias : subcommand.getAliases()) {
+                        parent.addSubcommand(new JDARegisteredCommand(parent.getInstance(), parent, parent.getBaseClass(), subcommand.getMethod(), subcommandAlias, subcommand.getDescription(), subParams, global, subPerms));
+                    }
+                }
+
+                JDACommandManager.getRootCommands().add(parent);
             }
-
-            JDACommandManager.getRootCommands().add(parent);
         }
     }
 }

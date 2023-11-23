@@ -6,8 +6,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CommandRegistration {
     protected static List<RegisteredCommand> collectCommandAliases(BaseCommand baseCommand) {
@@ -42,7 +44,7 @@ public class CommandRegistration {
                 parentMethod = first.get();
             }
 
-            RegisteredCommand parent = new RegisteredCommand(baseCommand, null, cmdClass, parentMethod, alias.split("\\|")[0], description, Lists.newArrayList());
+            RegisteredCommand parent = new RegisteredCommand(baseCommand, null, cmdClass, parentMethod, alias, description, Lists.newArrayList());
 
             Arrays.stream(cmdClass.getMethods())
                     .filter(method -> method.isAnnotationPresent(Subcommand.class))
@@ -90,5 +92,16 @@ public class CommandRegistration {
         }
 
         return commandParameters;
+    }
+
+    protected static void verifyParameterCompletions(CommandCompletions<?> completions, RegisteredCommand command, List<CommandParameter> params) {
+        params.stream()
+                .filter(CommandParameter::hasCompletion)
+                .filter(param -> completions.getCompletions(param.getCompletion()) == null)
+                .forEach(param -> {
+                    System.err.printf("Parameter [%s] registered in command [%s] requested missing completion [%s]\n", param.getName(), command.getFullName(), param.getCompletion());
+
+                    System.exit(1);
+                });
     }
 }
