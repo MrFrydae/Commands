@@ -6,6 +6,7 @@ import lombok.Setter;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -19,7 +20,11 @@ public class FabricBaseCommand extends BaseCommand {
     }
 
     protected void reply(Text text) {
-        getContext().getSource().sendMessage(text);
+        getPlayer().sendMessage(text);
+    }
+
+    protected void reply(Text text, boolean actionBar) {
+        getPlayer().sendMessage(text, actionBar);
     }
 
     @NotNull
