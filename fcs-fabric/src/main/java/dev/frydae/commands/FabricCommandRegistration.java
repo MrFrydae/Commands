@@ -24,8 +24,6 @@ public class FabricCommandRegistration extends CommandRegistration {
                                 CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null)
                         );
 
-                        verifyParameterCompletions(FabricCommandManager.getSingleton().getCommandCompletions(), command, command.getParameters());
-
                         FabricCommandManager.getRootCommands().add(command);
                     }
                 });
@@ -46,8 +44,6 @@ public class FabricCommandRegistration extends CommandRegistration {
                     String[] subPerms = CommandManager.getAnnotations().getAnnotationValue(subcommand.getMethod(), CommandPermission.class, null);
 
                     List<CommandParameter> subParams = collectMethodParameters(subcommand.getMethod());
-
-                    verifyParameterCompletions(FabricCommandManager.getSingleton().getCommandCompletions(), subcommand, subParams);
 
                     for (String subcommandAlias : subcommand.getAliases()) {
                         parent.addSubcommand(new FabricRegisteredCommand(parent.getInstance(), parent, parent.getBaseClass(), subcommand.getMethod(), subcommandAlias, subcommand.getDescription(), subParams, subPerms));

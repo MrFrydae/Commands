@@ -93,15 +93,4 @@ public class CommandRegistration {
 
         return commandParameters;
     }
-
-    protected static void verifyParameterCompletions(CommandCompletions<?> completions, RegisteredCommand command, List<CommandParameter> params) {
-        params.stream()
-                .filter(CommandParameter::hasCompletion)
-                .filter(param -> completions.getCompletions(param.getCompletion()) == null)
-                .forEach(param -> {
-                    System.err.printf("Parameter [%s] registered in command [%s] requested missing completion [%s]\n", param.getName(), command.getFullName(), param.getCompletion());
-
-                    System.exit(1);
-                });
-    }
 }

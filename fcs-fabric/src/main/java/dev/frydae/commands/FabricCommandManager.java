@@ -135,7 +135,7 @@ public final class FabricCommandManager extends CommandManager {
 
         if (commandParameter.hasCompletion()) {
             argument = argument.suggests((context, builder) -> {
-                Objects.requireNonNull(commandCompletions.getCompletions(commandParameter.getCompletion())).forEach(builder::suggest);
+                Objects.requireNonNull(commandCompletions.getCompletions(commandParameter.getCompletion(), context)).forEach(builder::suggest);
 
                 return builder.buildFuture();
             });

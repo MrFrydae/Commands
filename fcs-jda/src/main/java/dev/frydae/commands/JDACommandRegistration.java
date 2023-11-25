@@ -54,8 +54,6 @@ public final class JDACommandRegistration extends CommandRegistration {
                                 mergedPerms
                         );
 
-                        verifyParameterCompletions(JDACommandManager.getSingleton().getCommandCompletions(), command, command.getParameters());
-
                         JDACommandManager.getRootCommands().add(command);
                     }
                 });
