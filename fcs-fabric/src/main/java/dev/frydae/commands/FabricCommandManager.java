@@ -2,6 +2,7 @@ package dev.frydae.commands;
 
 import com.google.common.collect.Lists;
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
@@ -19,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
@@ -48,42 +50,44 @@ public final class FabricCommandManager extends CommandManager {
         FabricCommandRegistration.registerSubcommands(baseCommand);
     }
 
-    private static boolean checkPermissions(ServerCommandSource source, String[] permissions) {
+    private static boolean checkPermissions(ServerCommandSource source, String permission) {
         boolean permsModFound = FabricLoader.getInstance().getAllMods().stream().anyMatch(m -> m.getMetadata().getId().equalsIgnoreCase("access-manager"));
 
         if (permsModFound) {
-            return PermissionStore.hasPermission(Objects.requireNonNull(source.getPlayer()), permissions);
+            return PermissionStore.hasPermission(Objects.requireNonNull(source.getPlayer()), permission);
         } else {
             return source.hasPermissionLevel(1);
         }
     }
 
     public static void upsertCommands() {
-        CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
-            for (RegisteredCommand cmd : getRootCommands()) {
-                FabricRegisteredCommand command = (FabricRegisteredCommand) cmd;
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
+                getRootCommands().stream()
+                        .map(cmd -> (FabricRegisteredCommand) cmd)
+                        .forEach(command -> upsertCommand(dispatcher, command))
+        );
+    }
 
-                for (String alias : command.getAliases()) {
-                    LiteralArgumentBuilder<ServerCommandSource> builder = literal(alias);
+    private static void upsertCommand(CommandDispatcher<ServerCommandSource> dispatcher, FabricRegisteredCommand command) {
+        for (String alias : command.getAliases()) {
+            LiteralArgumentBuilder<ServerCommandSource> builder = literal(alias);
 
-                    if (command.hasSubcommands()) {
-                        if (command.getMethod() != null) {
-                            builder.executes(c -> executeCommand(command, c));
-                        }
+            if (command.hasSubcommands()) {
+                if (command.getMethod() != null) {
+                    builder.executes(c -> executeCommand(command, c));
+                }
 
-                        builder = setupSubcommands(command, builder);
-                    } else {
-                        builder = collectCommandArguments(alias, command, c -> executeCommand(command, c));
+                builder = setupSubcommands(command, builder);
+            } else {
+                builder = collectCommandArguments(alias, command, c -> executeCommand(command, c));
 
-                        if (command.hasPermissions()) {
-                            builder = builder.requires(p -> checkPermissions(p, command.getPermissions()));
-                        }
-                    }
-
-                    dispatcher.register(builder);
+                if (command.hasPermission()) {
+                    builder = builder.requires(p -> checkPermissions(p, command.getPermission()));
                 }
             }
-        }));
+
+            dispatcher.register(builder);
+        }
     }
 
     private static LiteralArgumentBuilder<ServerCommandSource> setupSubcommands(FabricRegisteredCommand command, LiteralArgumentBuilder<ServerCommandSource> builder) {
@@ -93,13 +97,17 @@ public final class FabricCommandManager extends CommandManager {
             for (String alias : subcommand.getAliases()) {
                 LiteralArgumentBuilder<ServerCommandSource> subBuilder = collectCommandArguments(alias, subcommand, c -> executeCommand(subcommand, c));
 
-                if (subcommand.hasPermissions()) {
-                    subBuilder = subBuilder.requires(p -> checkPermissions(p, subcommand.getPermissions()));
+                if (subcommand.hasPermission()) {
+                    subBuilder = subBuilder.requires(p -> checkPermissions(p, subcommand.getPermission()));
                 }
 
                 builder = builder.then(subBuilder);
             }
         }
+
+        builder = builder.requires(p -> command.getSubcommands().stream()
+                .map(s -> (FabricRegisteredCommand) s)
+                .anyMatch(scmd -> checkPermissions(p, scmd.getPermission())));
 
         return builder;
     }
@@ -152,9 +160,13 @@ public final class FabricCommandManager extends CommandManager {
 
     @SneakyThrows({IllegalAccessException.class, InvocationTargetException.class})
     private static int executeCommand(FabricRegisteredCommand command, CommandContext<ServerCommandSource> context) {
-        command.getInstance().setContext(context);
-
         try {
+            if (command.hasPermission() && !checkPermissions(context.getSource(), command.getPermission())) {
+                throw new IllegalCommandException("You do not have permission for this command.");
+            }
+
+            command.getInstance().setContext(context);
+
             command.getMethod().invoke(command.getInstance(), resolveArgs(command, context));
         } catch (IllegalCommandException e) {
             context.getSource().sendMessage(Text.literal(e.getMessage()).formatted(Formatting.RED));

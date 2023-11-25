@@ -9,13 +9,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Getter
 public class FabricRegisteredCommand extends RegisteredCommand {
-    private final String[] permissions;
+    private final String permission;
 
-    public FabricRegisteredCommand(@NotNull BaseCommand instance, RegisteredCommand parent, @NotNull Class<?> baseClass, Method method, @NotNull String name, @NotNull String description, List<CommandParameter> parameters, String[] permissions) {
+    public FabricRegisteredCommand(@NotNull BaseCommand instance, RegisteredCommand parent, @NotNull Class<?> baseClass, Method method, @NotNull String name, @NotNull String description, List<CommandParameter> parameters, String permission) {
         super(instance, parent, baseClass, method, name, description, parameters.stream().map(FabricCommandParameter::new).collect(Collectors.toList()));
 
-        this.permissions = permissions;
+        this.permission = permission;
 
     }
 
@@ -43,15 +44,7 @@ public class FabricRegisteredCommand extends RegisteredCommand {
         return null;
     }
 
-    public boolean hasPermissions() {
-        return permissions != null && permissions.length > 0;
-    }
-
-    public String[] getPermissions() {
-        if (getParent() != null) {
-            return Arrays.stream(ArrayUtils.addAll(getParent().getPermissions(), permissions)).distinct().toArray(String[]::new);
-        }
-
-        return permissions;
+    public boolean hasPermission() {
+        return permission != null;
     }
 }

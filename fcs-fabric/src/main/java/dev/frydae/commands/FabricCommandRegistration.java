@@ -12,6 +12,10 @@ public class FabricCommandRegistration extends CommandRegistration {
 
         collectCommandAliases(baseCommand)
                 .forEach(cmd -> {
+                    String methodPermission = CommandManager.getAnnotations().getAnnotationValue(cmd.getMethod(), CommandPermission.class, null);
+
+                    String permission = methodPermission != null ? methodPermission : CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null);
+
                     for (String alias : cmd.getAliases()) {
                         FabricRegisteredCommand command = new FabricRegisteredCommand(
                                 cmd.getInstance(),
@@ -21,7 +25,7 @@ public class FabricCommandRegistration extends CommandRegistration {
                                 alias,
                                 cmd.getDescription(),
                                 cmd.getParameters(),
-                                CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null)
+                                permission
                         );
 
                         FabricCommandManager.getRootCommands().add(command);
@@ -35,18 +39,18 @@ public class FabricCommandRegistration extends CommandRegistration {
         RegisteredCommand parentCommand = collectSubcommands(baseCommand);
 
         if (parentCommand != null) {
-            String[] cmdPerms = CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null);
+            String cmdPerm = CommandManager.getAnnotations().getAnnotationValue(cmdClass, CommandPermission.class, null);
 
             for (String alias : parentCommand.getAliases()) {
-                FabricRegisteredCommand parent = new FabricRegisteredCommand(parentCommand.getInstance(), parentCommand.getParent(), parentCommand.getBaseClass(), parentCommand.getMethod(), alias, parentCommand.getDescription(), parentCommand.getParameters(), cmdPerms);
+                FabricRegisteredCommand parent = new FabricRegisteredCommand(parentCommand.getInstance(), parentCommand.getParent(), parentCommand.getBaseClass(), parentCommand.getMethod(), alias, parentCommand.getDescription(), parentCommand.getParameters(), cmdPerm);
 
                 for (RegisteredCommand subcommand : parentCommand.getSubcommands()) {
-                    String[] subPerms = CommandManager.getAnnotations().getAnnotationValue(subcommand.getMethod(), CommandPermission.class, null);
+                    String subPerm = CommandManager.getAnnotations().getAnnotationValue(subcommand.getMethod(), CommandPermission.class, null);
 
                     List<CommandParameter> subParams = collectMethodParameters(subcommand.getMethod());
 
                     for (String subcommandAlias : subcommand.getAliases()) {
-                        parent.addSubcommand(new FabricRegisteredCommand(parent.getInstance(), parent, parent.getBaseClass(), subcommand.getMethod(), subcommandAlias, subcommand.getDescription(), subParams, subPerms));
+                        parent.addSubcommand(new FabricRegisteredCommand(parent.getInstance(), parent, parent.getBaseClass(), subcommand.getMethod(), subcommandAlias, subcommand.getDescription(), subParams, subPerm));
                     }
                 }
 
