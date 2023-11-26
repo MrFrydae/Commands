@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,10 +63,11 @@ public class FabricCommandCompletions extends CommandCompletions<String> {
         return smartResolverMap.get(input);
     }
 
+    @NotNull
     public List<String> getCompletions(String key, CommandContext<ServerCommandSource> context) {
         List<String> regularCompletions = getCompletions(key);
 
-        if (regularCompletions != null) {
+        if (!regularCompletions.isEmpty()) {
             return regularCompletions;
         }
 
@@ -73,8 +75,12 @@ public class FabricCommandCompletions extends CommandCompletions<String> {
 
         Function<FabricCommandOptionContext, List<String>> smartResolver = getSmartResolver(input);
 
-        FabricCommandOptionContext fabricContext = new FabricCommandOptionContext(key, context);
+        if (smartResolver != null) {
+            FabricCommandOptionContext fabricContext = new FabricCommandOptionContext(key, context);
 
-        return smartResolver.apply(fabricContext);
+            return smartResolver.apply(fabricContext);
+        }
+
+        return Lists.newArrayList();
     }
 }

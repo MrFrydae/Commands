@@ -1,6 +1,8 @@
 package dev.frydae.commands;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -40,7 +42,7 @@ public class CommandCompletions<T> {
      * @param key the key to search for
      * @return a list of {@link T types} for this key
      */
-    @Nullable
+    @NotNull
     public List<T> getCompletions(String key) {
         String[] inputSplit = key.split("\\|");
 
@@ -49,7 +51,7 @@ public class CommandCompletions<T> {
         Function<CommandOptionContext, List<T>> resolver = getResolver(input);
 
         if (resolver == null) {
-            return null;
+            return Lists.newArrayList();
         }
 
         CommandOptionContext commandOptionContext = new CommandOptionContext(key);
