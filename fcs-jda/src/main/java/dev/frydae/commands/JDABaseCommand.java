@@ -35,4 +35,14 @@ public class JDABaseCommand extends BaseCommand {
     protected ReplyCallbackAction replyHidden(MessageEmbed... embeds) {
         return getEvent().getInteraction().replyEmbeds(Arrays.asList(embeds)).setEphemeral(true);
     }
+
+    @CheckReturnValue
+    protected ReplyCallbackAction reply(String message) {
+        return getEvent().getInteraction().reply(message);
+    }
+
+    @CheckReturnValue
+    protected ReplyCallbackAction reply(MessageEmbed... embeds) {
+        return getEvent().getInteraction().replyEmbeds(Arrays.asList(embeds));
+    }
 }
