@@ -11,9 +11,23 @@ pipeline {
     }
 
     stages {
-        stage('Build with Gradle') {
+        stage('Build Projects') {
             steps {
-                sh 'gradle build -x test'
+                sh 'gradle :fcs-core:build -x test'
+            }
+
+            parallel {
+                stage('Build JDA') {
+                    steps {
+                        sh 'gradle :fcs-jda:build -x test'
+                    }
+                }
+
+                stage('Build Fabric') {
+                    steps {
+                        sh 'gradle :fcs-fabric:build -x test'
+                    }
+                }
             }
         }
 
