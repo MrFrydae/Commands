@@ -31,28 +31,34 @@ pipeline {
             parallel {
                 stage('Deploy Core') {
                     steps {
-                        withCredentials([usernamePassword(credentialsId: 'frydae-maven-key', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                            sh 'gradle :fcs-core:publish -PfrydaeRepositoryUsername=$USERNAME -PfrydaeRepositoryPassword=$PASSWORD'
+                        script {
+                            publishStage('Core')
                         }
                     }
                 }
 
                 stage('Deploy JDA') {
                     steps {
-                        withCredentials([usernamePassword(credentialsId: 'frydae-maven-key', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                            sh 'gradle :fcs-jda:publish -PfrydaeRepositoryUsername=$USERNAME -PfrydaeRepositoryPassword=$PASSWORD'
+                        script {
+                            publishStage('JDA')
                         }
                     }
                 }
 
                 stage('Deploy Fabric') {
                     steps {
-                        withCredentials([usernamePassword(credentialsId: 'frydae-maven-key', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                            sh 'gradle :fcs-fabric:publish -PfrydaeRepositoryUsername=$USERNAME -PfrydaeRepositoryPassword=$PASSWORD'
+                        script {
+                            publishStage('Fabric')
                         }
                     }
                 }
             }
         }
+    }
+}
+
+def publishStage(projectName) {
+    withCredentials([usernamePassword(credentialsId: 'frydae-maven-key', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+        sh "gradle :fcs-${projectName.toLowerCase()}:publish -PfrydaeRepositoryUsername=$USERNAME -PfrydaeRepositoryPassword=$PASSWORD"
     }
 }
