@@ -31,24 +31,24 @@ pipeline {
             parallel {
                 stage('Deploy Core') {
                     steps {
-                        script {
-                            publishStage('Core')
+                        withCredentials([usernamePassword(credentialsId: 'frydae-maven-key', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                            sh 'gradle :fcs-core:publish -PfrydaeRepositoryUsername=$USERNAME -PfrydaeRepositoryPassword=$PASSWORD'
                         }
                     }
                 }
 
                 stage('Deploy JDA') {
                     steps {
-                        script {
-                            publishStage('JDA')
+                        withCredentials([usernamePassword(credentialsId: 'frydae-maven-key', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                            sh 'gradle :fcs-jda:publish -PfrydaeRepositoryUsername=$USERNAME -PfrydaeRepositoryPassword=$PASSWORD'
                         }
                     }
                 }
 
                 stage('Deploy Fabric') {
                     steps {
-                        script {
-                            publishStage('Fabric')
+                        withCredentials([usernamePassword(credentialsId: 'frydae-maven-key', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                            sh 'gradle :fcs-fabric:publish -PfrydaeRepositoryUsername=$USERNAME -PfrydaeRepositoryPassword=$PASSWORD'
                         }
                     }
                 }
@@ -59,32 +59,33 @@ pipeline {
             when {
                 branch 'main'
                 expression {
-                    checkJdaVersionChange()
+                    checkVersionChange('jda') || checkVersionChange('fabric')
                 }
             }
 
             steps {
                 script {
-                    commitTag()
+                    commitTag('jda')
+                    commitTag('fabric')
                 }
             }
         }
     }
 }
 
-def publishStage(projectName) {
-    withCredentials([usernamePassword(credentialsId: 'frydae-maven-key', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-        sh "gradle :fcs-${projectName.toLowerCase()}:publish -PfrydaeRepositoryUsername=$USERNAME -PfrydaeRepositoryPassword=$PASSWORD"
-    }
+def checkVersionChange(projectName) {
+    return sh(script: "git diff HEAD~1 HEAD -- gradle.properties | grep \"${projectName}_version\"", returnStatus: true) == 0
 }
 
-def checkJdaVersionChange() {
-    return sh(script: 'git diff HEAD~1 HEAD -- gradle.properties | grep "jda_version"', returnStatus: true) == 0
-}
+def commitTag(projectName) {
+    def version = readFile('gradle.properties').readLines().find { it.startsWith("${projectName}_version") }.split('=')[1].trim()
+    def tagName = "${projectName}-${version}"
 
-def commitTag() {
-    def version = readFile('gradle.properties').readLines().find { it.startsWith('jda_version') }.split('=')[1].trim()
-    def tagName = "jda-${version}"
+    // Delete the tag if it exists locally and remotely
+    sh "git tag -d ${tagName} || true"
+    sh "git push origin --delete ${tagName} || true"
+
+    // Create and push the new tag
     sh "git tag ${tagName}"
     sh "git push origin ${tagName}"
 }
