@@ -16,16 +16,18 @@ pipeline {
                 sh 'gradle :fcs-core:build -x test'
             }
 
-            parallel {
-                stage('Build JDA') {
-                    steps {
-                        sh 'gradle :fcs-jda:build -x test'
+            stage('Build JDA and Fabric') {
+                parallel {
+                    stage('Build JDA') {
+                        steps {
+                            sh 'gradle :fcs-jda:build -x test'
+                        }
                     }
-                }
 
-                stage('Build Fabric') {
-                    steps {
-                        sh 'gradle :fcs-fabric:build -x test'
+                    stage('Build Fabric') {
+                        steps {
+                            sh 'gradle :fcs-fabric:build -x test'
+                        }
                     }
                 }
             }
