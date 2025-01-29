@@ -5,8 +5,6 @@ plugins {
 group = property("maven_group")!!
 version = "${property("fabric_version")!!}-SNAPSHOT"
 
-apply(from = uri("https://files.frydae.dev/gradle/publishing.gradle"))
-
 dependencies {
     minecraft("com.mojang:minecraft:${property("minecraft_version")}")
     mappings("net.fabricmc:yarn:${property("yarn_mappings")}:v2")
